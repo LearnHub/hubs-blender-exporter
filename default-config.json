@@ -266,6 +266,11 @@
           "description": "Controls",
           "default": true
         },
+        "interactable": {
+          "type": "bool", 
+          "description": "Interactable",
+          "default": false
+        },
         "alphaMode": {
           "type": "enum",
           "description": "Transparency Mode",
@@ -303,6 +308,11 @@
           "type": "bool", 
           "description": "Controls",
           "default": true
+        },
+        "interactable": {
+          "type": "bool", 
+          "description": "Interactable",
+          "default": false
         },
         "loop": {
           "type": "bool", 
@@ -391,6 +401,11 @@
           "type": "bool", 
           "description": "Controls",
           "default": true
+        },
+        "interactable": {
+          "type": "bool", 
+          "description": "Interactable",
+          "default": false
         },
         "loop": {
           "type": "bool", 
