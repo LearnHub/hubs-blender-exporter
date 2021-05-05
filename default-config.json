@@ -468,6 +468,22 @@
         }
       }
     },
+    "model": {
+      "category": "Elements",
+      "node": true,
+      "networked": true,
+      "properties": {
+        "src": {
+          "type": "string",
+          "description": "Model URL"
+        },
+        "interactable": {
+          "type": "bool", 
+          "description": "Interactable",
+          "default": false
+        }
+      }
+    },
     "nav-mesh": {
       "category": "Scene",
       "node": true,
