@@ -644,6 +644,13 @@
           "description": "Model URL"
         }
       }
+    },
+    "interactable": {
+      "category": "Elements",
+      "node": true,
+      "networked": true,
+      "properties": {
+      }
     }
   }
 }
