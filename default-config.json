@@ -974,7 +974,7 @@
         }
       }
     },
-    "interactable": {
+    "moveable": {
       "category": "Elements",
       "node": true,
       "networked": true,
