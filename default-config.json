@@ -899,6 +899,18 @@
         "receive": { "type": "bool", "default": true }
       }
     },
+    "avn-material-pragma": {
+      "category": "Elements",
+      "node": false,
+      "scene": false,
+      "material": true,
+      "properties": {
+        "keepPbr": { "type": "bool", "default": false },
+        "keepNormalMap": { "type": "bool", "default": false },
+        "keepImageFormat": { "type": "bool", "default": false },
+        "keepImageResolution": { "type": "bool", "default": false }
+      }
+    },
     "environment-settings": {
       "category": "Scene",
       "node": false,
