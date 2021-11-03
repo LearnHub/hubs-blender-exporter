@@ -899,18 +899,6 @@
         "receive": { "type": "bool", "default": true }
       }
     },
-    "avn-material-pragma": {
-      "category": "Elements",
-      "node": false,
-      "scene": false,
-      "material": true,
-      "properties": {
-        "keepPbr": { "type": "bool", "default": false },
-        "keepNormalMap": { "type": "bool", "default": false },
-        "keepImageFormat": { "type": "bool", "default": false },
-        "keepImageResolution": { "type": "bool", "default": false }
-      }
-    },
     "environment-settings": {
       "category": "Scene",
       "node": false,
@@ -964,6 +952,75 @@
       "node": true,
       "networked": true,
       "properties": {
+      }
+    },
+    "avn-scene-pragma": {
+      "category": "Elements",
+      "scene": true,
+      "node": false,
+      "properties": {
+        "scaleLightmap": { "type": "bool", "default": true, "description": "Scale the lightmaps in the scene to maximize dynamic range" },
+        "padLightmap": { "type": "bool", "default": true, "description": "Fill in the transparent pixels around the texture islands in the lightmap" },
+        "maxImageSizeEnvironment": {"type": "int", "subType": "PIXEL", "min": 1, "max": 8192, "default": 1024, "description": "Environment images larger than this will be downscaled"},
+        "maxImageSizeBackground": {"type": "int", "subType": "PIXEL", "min": 1, "max": 8192, "default": 4096, "description": "Skybox background images larger than this will be downscaled"},
+        "maxImageSizeLightmap": {"type": "int", "subType": "PIXEL", "min": 1, "max": 8192, "default": 2048, "description": "Lightmaps larger than this will be downscaled"},
+        "compressionModeLightmap": { 
+          "type": "enum",
+          "description": "Compression mode to use for lightmap texture",
+          "items": [
+            [ "none", "None", "Use original image file" ],
+            [ "etc1s", "ETC1S", "ETC1S (~1 bit-per-pixel)" ],
+            [ "uastc", "UASTC", "UASTC (~8 bits-per-pixel)" ]
+          ],
+          "default": "etc1s"
+        },
+        "compressionModeBackground": { 
+          "type": "enum",
+          "description": "Compression mode to use for background texture",
+          "items": [
+            [ "none", "None", "Use original image file" ],
+            [ "etc1s", "ETC1S", "ETC1S (~1 bit-per-pixel)" ],
+            [ "uastc", "UASTC", "UASTC (~8 bits-per-pixel)" ]
+          ],
+          "default": "etc1s"
+        }
+      }
+    },
+    "avn-node-pragma": {
+      "category": "Elements",
+      "node": true,
+      "properties": {
+        "frustrumCulling": { "type": "bool", "default": true, "description": "Ignore entities outside of the camera frustrum. Frustrum culling can cause problems with some animations" }
+      }
+    },
+    "avn-material-pragma": {
+      "category": "Elements",
+      "material": true,
+      "node": false,
+      "properties": {
+        "keepPbr": { "type": "bool", "default": false, "description": "Keep the PBR settings rather than force the material to be unlit" },
+        "keepNormalMap": { "type": "bool", "default": false, "description": "Keep the normal map (requires 'Keep PBR' to also be true)" },
+        "maxImageSize": {"type": "int", "subType": "PIXEL", "min": 1, "max": 8192, "default": 2048, "description": "Texture images larger than this will be downscaled"},
+        "compressionMode": { 
+          "type": "enum",
+          "description": "Compression mode to use for base and roughness maps",
+          "items": [
+            [ "none", "None", "Use original image file" ],
+            [ "etc1s", "ETC1S", "ETC1S (~1 bit-per-pixel)" ],
+            [ "uastc", "UASTC", "UASTC (~8 bits-per-pixel)" ]
+          ],
+          "default": "etc1s"
+        },
+        "compressionModeNormalMap": { 
+          "type": "enum",
+          "description": "Compression mode to use for normal maps",
+          "items": [
+            [ "none", "None", "Use original image file" ],
+            [ "etc1s", "ETC1S", "ETC1S (~1 bit-per-pixel)" ],
+            [ "uastc", "UASTC", "UASTC (~8 bits-per-pixel)" ]
+          ],
+          "default": "uastc"
+        }
       }
     }
   }
