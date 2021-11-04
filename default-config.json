@@ -986,13 +986,6 @@
         }
       }
     },
-    "avn-node-pragma": {
-      "category": "Elements",
-      "node": true,
-      "properties": {
-        "frustrumCulling": { "type": "bool", "default": true, "description": "Ignore entities outside of the camera frustrum. Frustrum culling can cause problems with some animations" }
-      }
-    },
     "avn-material-pragma": {
       "category": "Elements",
       "material": true,
