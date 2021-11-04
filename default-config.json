@@ -936,12 +936,11 @@
         }
       }
     },
-      "frustrum": {
-        "category": "Elements",
-        "node": true,
-        "properties": {
-          "culled": { "type": "bool", "default": true, "description": "Ignore entities outside of the camera frustrum. Frustrum culling can cause problems with some animations" }
-        }
+    "frustrum": {
+      "category": "Elements",
+      "node": true,
+      "properties": {
+        "culled": { "type": "bool", "default": true, "description": "Ignore entities outside of the camera frustrum. Frustrum culling can cause problems with some animations" }
       }
     },
     "model": {
@@ -1000,6 +999,7 @@
       "node": false,
       "properties": {
         "keepPbr": { "type": "bool", "default": false, "description": "Keep the PBR settings rather than force the material to be unlit" },
+        "keepRoughnessMap": { "type": "bool", "default": false, "description": "Keep the roughness map (requires 'Keep PBR' to also be true)" },
         "keepNormalMap": { "type": "bool", "default": false, "description": "Keep the normal map (requires 'Keep PBR' to also be true)" },
         "maxImageSize": {"type": "int", "subType": "PIXEL", "min": 1, "max": 8192, "default": 2048, "description": "Texture images larger than this will be downscaled"},
         "compressionMode": { 
@@ -1024,4 +1024,5 @@
         }
       }
     }
+  }
 }
