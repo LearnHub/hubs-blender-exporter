@@ -970,7 +970,7 @@
         "padLightmap": { "type": "bool", "default": true, "description": "Fill in the transparent pixels around the texture islands in the lightmap" },
         "maxImageSizeEnvironment": {"type": "int", "subType": "PIXEL", "min": 1, "max": 8192, "default": 1024, "description": "Environment images larger than this will be downscaled"},
         "maxImageSizeBackground": {"type": "int", "subType": "PIXEL", "min": 1, "max": 8192, "default": 4096, "description": "Skybox background images larger than this will be downscaled"},
-        "maxImageSizeLightmap": {"type": "int", "subType": "PIXEL", "min": 1, "max": 8192, "default": 2048, "description": "Lightmaps larger than this will be downscaled"},
+        "maxImageSizeLightmap": {"type": "int", "subType": "PIXEL", "min": 1, "max": 8192, "default": 4096, "description": "Lightmaps larger than this will be downscaled"},
         "compressionModeLightmap": { 
           "type": "enum",
           "description": "Compression mode to use for lightmap texture",
@@ -979,7 +979,7 @@
             [ "etc1s", "ETC1S", "ETC1S (~1 bit-per-pixel)" ],
             [ "uastc", "UASTC", "UASTC (~8 bits-per-pixel)" ]
           ],
-          "default": "etc1s"
+          "default": "uastc"
         },
         "compressionModeBackground": { 
           "type": "enum",
@@ -989,7 +989,7 @@
             [ "etc1s", "ETC1S", "ETC1S (~1 bit-per-pixel)" ],
             [ "uastc", "UASTC", "UASTC (~8 bits-per-pixel)" ]
           ],
-          "default": "etc1s"
+          "default": "uastc"
         }
       }
     },
@@ -999,8 +999,10 @@
       "node": false,
       "properties": {
         "keepPbr": { "type": "bool", "default": false, "description": "Keep the PBR settings rather than force the material to be unlit" },
-        "keepRoughnessMap": { "type": "bool", "default": false, "description": "Keep the roughness map (requires 'Keep PBR' to also be true)" },
-        "keepNormalMap": { "type": "bool", "default": false, "description": "Keep the normal map (requires 'Keep PBR' to also be true)" },
+        "keepMetallicRoughnessMap": { "type": "bool", "default": false, "description": "Keep the metallic roughness map (requires 'Keep Pbr' to also be true)" },
+        "keepNormalMap": { "type": "bool", "default": false, "description": "Keep the normal map (requires 'Keep Pbr' to also be true)" },
+        "keepOcclusionMap": { "type": "bool", "default": false, "description": "Keep the occlusion map (requires 'Keep Pbr' to also be true)" },
+        "keepEmissiveMap": { "type": "bool", "default": false, "description": "Keep the emissive map (requires 'Keep Pbr' to also be true)" },
         "maxImageSize": {"type": "int", "subType": "PIXEL", "min": 1, "max": 8192, "default": 2048, "description": "Texture images larger than this will be downscaled"},
         "compressionMode": { 
           "type": "enum",
