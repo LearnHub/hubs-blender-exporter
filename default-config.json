@@ -97,7 +97,7 @@
         "mediaMaxDistance": { "type": "float", "default": 10000.0, "unit": "LENGTH","description": "Media Max Distance" },
         "mediaConeInnerAngle": { "type": "float", "default": 360.0, "description": "Media Cone Inner Angle" },
         "mediaConeOuterAngle": { "type": "float", "default": 0.0, "description": "Media Cone Outer Angle" },
-        "mediaConeOuterGain": { "type": "float", "default": 0.0, "description": "Media Cone Outer Gain" }
+        "mediaConeOuterGain": { "type": "float", "default": 0.9, "description": "Media Cone Outer Gain" }
       }
     },
     "visible": {
@@ -869,7 +869,7 @@
         "coneOuterGain": {
           "type": "float",
           "description": "A double value describing the amount of volume reduction outside the cone defined by the coneOuterAngle attribute.",
-          "default": 0.0
+          "default": 0.9
         }
       }
     },
