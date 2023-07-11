@@ -52,7 +52,7 @@ class AvnScenePragma(HubsComponent):
     )
 
     maxImageSizeLightmap: IntProperty(
-        name="Max Image Size (Lightmaps)", 
+        name="Max Image Size (Lightmaps)",
         description="Lightmaps images larger than this will be downscaled",
         subtype="UNSIGNED",
         default=4096,
