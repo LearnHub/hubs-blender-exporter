@@ -13,5 +13,3 @@ class Moveable(HubsComponent):
         'icon': 'VIEW_PAN',
         'version': (1, 0, 0)
     }
-
-    

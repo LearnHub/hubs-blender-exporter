@@ -9,6 +9,7 @@ COMPRESSION_MODES = [
     ("uastc", "UASTC", "UASTC (~8 bits-per-pixel)")
 ]
 
+
 class AvnScenePragma(HubsComponent):
     _definition = {
         'name': 'avn-scene-pragma',
@@ -33,18 +34,18 @@ class AvnScenePragma(HubsComponent):
     )
 
     maxImageSizeEnvironment: IntProperty(
-        name="Max Image Size (Environment)", 
-        description="Environment images larger than this will be downscaled", 
-        subtype="UNSIGNED", 
+        name="Max Image Size (Environment)",
+        description="Environment images larger than this will be downscaled",
+        subtype="UNSIGNED",
         default=512,
         min=1,
         max=8192
     )
 
     maxImageSizeBackground: IntProperty(
-        name="Max Image Size (Background)", 
-        description="Background images larger than this will be downscaled", 
-        subtype="UNSIGNED", 
+        name="Max Image Size (Background)",
+        description="Background images larger than this will be downscaled",
+        subtype="UNSIGNED",
         default=4096,
         min=1,
         max=8192
@@ -52,8 +53,8 @@ class AvnScenePragma(HubsComponent):
 
     maxImageSizeLightmap: IntProperty(
         name="Max Image Size (Lightmaps)", 
-        description="Lightmaps images larger than this will be downscaled", 
-        subtype="UNSIGNED", 
+        description="Lightmaps images larger than this will be downscaled",
+        subtype="UNSIGNED",
         default=4096,
         min=1,
         max=8192

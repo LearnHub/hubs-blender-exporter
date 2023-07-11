@@ -9,6 +9,7 @@ COMPRESSION_MODES = [
     ("uastc", "UASTC", "UASTC (~8 bits-per-pixel)")
 ]
 
+
 class AvnMaterialPragma(HubsComponent):
     _definition = {
         'name': 'avn-material-pragma',
@@ -51,9 +52,9 @@ class AvnMaterialPragma(HubsComponent):
     )
 
     maxImageSize: IntProperty(
-        name="Max Image Size", 
-        description="Texture images larger than this will be downscaled", 
-        subtype="UNSIGNED", 
+        name="Max Image Size",
+        description="Texture images larger than this will be downscaled",
+        subtype="UNSIGNED",
         default=2048,
         min=1,
         max=8192
