@@ -3,7 +3,7 @@ name: Publish
 on:
   push:
     branches:
-      - master
+      - avn
   pull_request:
 
 jobs:
