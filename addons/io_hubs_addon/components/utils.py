@@ -98,10 +98,6 @@ def get_object_source(context, panel_type):
         return context.object
 
 
-def dash_to_title(s):
-    return s.replace("-", " ").title()
-
-
 def children_recurse(ob, result):
     for child in ob.children:
         result.append(child)
@@ -132,7 +128,7 @@ def redraw_component_ui(context):
 def is_linked(datablock):
     if not datablock:
         return False
-    return bool(datablock.library or datablock.override_library)
+    return bool(datablock.id_data.library or datablock.id_data.override_library)
 
 
 def update_image_editors(old_img, img):

@@ -4,7 +4,7 @@ from bpy.types import Operator, PropertyGroup
 from functools import reduce
 
 from .types import PanelType, MigrationType
-from .utils import get_object_source, dash_to_title, has_component, add_component, remove_component, wrap_text, display_wrapped_text, is_dep_required, update_image_editors
+from .utils import get_object_source, has_component, add_component, remove_component, wrap_text, display_wrapped_text, is_dep_required, update_image_editors
 from .components_registry import get_components_registry, get_components_icons, get_component_by_name
 from ..preferences import get_addon_pref
 from .handlers import migrate_components
@@ -30,15 +30,23 @@ class AddHubsComponent(Operator):
             panel_type = PanelType(panel.bl_context)
             if panel_type == PanelType.SCENE:
                 if is_linked(context.scene):
-                    cls.poll_message_set("Disabled: Cannot add components to linked scenes")
+                    if bpy.app.version >= (3, 0, 0):
+                        cls.poll_message_set("Cannot add components to linked scenes")
                     return False
             elif panel_type == PanelType.OBJECT:
                 if is_linked(context.active_object):
-                    cls.poll_message_set("Disabled: Cannot add components to linked objects")
+                    if bpy.app.version >= (3, 0, 0):
+                        cls.poll_message_set("Cannot add components to linked objects")
                     return False
             elif panel_type == PanelType.MATERIAL:
                 if is_linked(context.active_object.active_material):
-                    cls.poll_message_set("Disabled: Cannot add components to linked materials")
+                    if bpy.app.version >= (3, 0, 0):
+                        cls.poll_message_set("Cannot add components to linked materials")
+                    return False
+            elif panel_type == PanelType.BONE:
+                if is_linked(context.active_bone):
+                    if bpy.app.version >= (3, 0, 0):
+                        cls.poll_message_set("Cannot add components to linked bones")
                     return False
 
         return True
@@ -137,8 +145,7 @@ class AddHubsComponent(Operator):
 
                         cmp_idx += 1
                         component_name = component_class.get_name()
-                        component_display_name = dash_to_title(
-                            component_class.get_display_name(component_name))
+                        component_display_name = component_class.get_display_name()
 
                         op = None
                         if component_class.get_icon() is not None:
@@ -207,15 +214,23 @@ class RemoveHubsComponent(Operator):
             panel_type = PanelType(panel.bl_context)
             if panel_type == PanelType.SCENE:
                 if is_linked(context.scene):
-                    cls.poll_message_set("Disabled: Cannot remove components from linked scenes")
+                    if bpy.app.version >= (3, 0, 0):
+                        cls.poll_message_set("Cannot remove components from linked scenes")
                     return False
             elif panel_type == PanelType.OBJECT:
                 if is_linked(context.active_object):
-                    cls.poll_message_set("Disabled: Cannot remove components from linked objects")
+                    if bpy.app.version >= (3, 0, 0):
+                        cls.poll_message_set("Cannot remove components from linked objects")
                     return False
             elif panel_type == PanelType.MATERIAL:
                 if is_linked(context.active_object.active_material):
-                    cls.poll_message_set("Disabled: Cannot remove components from linked materials")
+                    if bpy.app.version >= (3, 0, 0):
+                        cls.poll_message_set("Cannot remove components from linked materials")
+                    return False
+            elif panel_type == PanelType.BONE:
+                if is_linked(context.active_bone):
+                    if bpy.app.version >= (3, 0, 0):
+                        cls.poll_message_set("Cannot add components to linked bones")
                     return False
 
         return True
@@ -490,6 +505,11 @@ class CopyHubsComponent(Operator):
 
     @classmethod
     def poll(cls, context):
+        if is_linked(context.scene):
+            if bpy.app.version >= (3, 0, 0):
+                cls.poll_message_set("Cannot copy components when in linked scenes")
+            return False
+
         if hasattr(context, "panel"):
             panel = getattr(context, 'panel')
             panel_type = PanelType(panel.bl_context)
@@ -537,6 +557,9 @@ class CopyHubsComponent(Operator):
         component_class = get_component_by_name(self.component_name)
         component_id = component_class.get_id()
         for dest_host in selected_hosts:
+            if is_linked(dest_host):
+                continue
+
             if component_class.is_dep_only():
                 if not is_dep_required(dest_host, None, self.component_name):
                     continue
@@ -576,8 +599,7 @@ class OpenImage(Operator):
     @ classmethod
     def description(cls, context, properties):
         description_text = "Load an external image "
-        ob = getattr(context, 'host')
-        if bpy.app.version < (3, 0, 0) and is_linked(ob):
+        if bpy.app.version < (3, 0, 0) and is_linked(context.host):
             description_text += f"\nDisabled: {cls.disabled_message}"
 
         return description_text
@@ -585,8 +607,7 @@ class OpenImage(Operator):
     @ classmethod
     def poll(cls, context):
         if hasattr(context, "host"):
-            ob = getattr(context, 'host')
-            if is_linked(ob):
+            if is_linked(context.host):
                 if bpy.app.version >= (3, 0, 0):
                     cls.poll_message_set(f"{cls.disabled_message}.")
                 return False
