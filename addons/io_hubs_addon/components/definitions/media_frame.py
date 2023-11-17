@@ -68,7 +68,7 @@ class MediaFrame(HubsComponent):
                ("image", "Only Images", "Allow only images"),
                ("video", "Only Videos", "Allow only videos"),
                ("pdf", "Only PDFs", "Allow only PDFs")],
-        default="all-2d")
+        default="all")
 
     bounds: FloatVectorProperty(
         name="Bounds",
