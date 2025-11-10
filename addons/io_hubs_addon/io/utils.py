@@ -62,9 +62,9 @@ class HubsExportImage(gltf2_blender_image.ExportImage):
 
     def encode(self, mime_type: Optional[str], export_settings) -> Union[Tuple[bytes, bool], bytes]:
         if mime_type == "image/vnd.radiance":
-            return self.encode_from_image_hdr(self.blender_image())
+            return self.encode_from_image_hdr(self.blender_image(export_settings))
         if mime_type == "image/x-exr":
-            return self.encode_from_image_exr(self.blender_image())
+            return self.encode_from_image_exr(self.blender_image(export_settings))
         # Blender 4.x uses the new API with export_settings
         return super().encode(mime_type, export_settings)
 
@@ -101,10 +101,16 @@ def gather_image(blender_image, export_settings):
     if not blender_image:
         return None
 
+    # Skip images without a valid filepath
+    if not blender_image.filepath:
+        return None
+
     name, _extension = os.path.splitext(
         os.path.basename(blender_image.filepath))
 
-    if export_settings["gltf_image_format"] == "AUTO":
+    # Get image format with default fallback for compatibility
+    image_format = export_settings.get("gltf_image_format", "AUTO")
+    if image_format == "AUTO":
         if blender_image.file_format == "HDR":
             mime_type = "image/vnd.radiance"
         elif blender_image.file_format == "OPEN_EXR":
@@ -119,7 +125,13 @@ def gather_image(blender_image, export_settings):
     if type(data) == tuple:
         data = data[0]
 
-    if export_settings['gltf_format'] == 'GLTF_SEPARATE':
+    # If encoding failed or returned empty data, return None
+    if data is None or (isinstance(data, bytes) and len(data) == 0):
+        return None
+
+    # Get format with default fallback for compatibility
+    gltf_format = export_settings.get('gltf_format', 'GLTF_SEPARATE')
+    if gltf_format == 'GLTF_SEPARATE':
         uri = HubsImageData(data=data, mime_type=mime_type, name=name)
         buffer_view = None
     else:
