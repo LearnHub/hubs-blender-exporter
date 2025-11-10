@@ -99,7 +99,9 @@ class HubsComponent(PropertyGroup):
     def is_dep_only(cls):
         return not cls.get_category()
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        # Blender 4.x passes additional arguments to PropertyGroup.__init__
+        super().__init__(*args, **kwargs)
         if type(self) is HubsComponent:
             raise Exception(
                 'HubsComponent is an abstract class and cannot be instantiated directly')
