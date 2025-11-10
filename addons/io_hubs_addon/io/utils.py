@@ -53,18 +53,32 @@ class HubsImageData(gltf2_io_image_data.ImageData):
 
 
 class HubsExportImage(gltf2_blender_image.ExportImage):
+    def __init__(self):
+        super().__init__()
+        self._hubs_original_image = None
+
     @staticmethod
     def from_blender_image(image: bpy.types.Image):
         export_image = HubsExportImage()
+        export_image._hubs_original_image = image
         for chan in range(image.channels):
             export_image.fill_image(image, dst_chan=chan, src_chan=chan)
         return export_image
 
     def encode(self, mime_type: Optional[str], export_settings) -> Union[Tuple[bytes, bool], bytes]:
+        blender_img = self.blender_image(export_settings)
+
+        # If blender_image() returns None (not on happy path), use our stored original
+        if not blender_img and self._hubs_original_image:
+            blender_img = self._hubs_original_image
+
         if mime_type == "image/vnd.radiance":
-            return self.encode_from_image_hdr(self.blender_image(export_settings))
-        if mime_type == "image/x-exr":
-            return self.encode_from_image_exr(self.blender_image(export_settings))
+            if blender_img:
+                return self.encode_from_image_hdr(blender_img)
+        elif mime_type == "image/x-exr":
+            if blender_img:
+                return self.encode_from_image_exr(blender_img)
+
         # Blender 4.x uses the new API with export_settings
         return super().encode(mime_type, export_settings)
 
@@ -101,12 +115,14 @@ def gather_image(blender_image, export_settings):
     if not blender_image:
         return None
 
-    # Skip images without a valid filepath
-    if not blender_image.filepath:
-        return None
-
-    name, _extension = os.path.splitext(
-        os.path.basename(blender_image.filepath))
+    # For images with a filepath, use the basename
+    # For generated/baked images without filepath, use the image name
+    if blender_image.filepath:
+        name, _extension = os.path.splitext(
+            os.path.basename(blender_image.filepath))
+    else:
+        # Use the image name for generated images (e.g., baked lightmaps)
+        name = blender_image.name
 
     # Get image format with default fallback for compatibility
     image_format = export_settings.get("gltf_image_format", "AUTO")
@@ -132,7 +148,10 @@ def gather_image(blender_image, export_settings):
     # Get format with default fallback for compatibility
     gltf_format = export_settings.get('gltf_format', 'GLTF_SEPARATE')
     if gltf_format == 'GLTF_SEPARATE':
-        uri = HubsImageData(data=data, mime_type=mime_type, name=name)
+        image_data = HubsImageData(data=data, mime_type=mime_type, name=name)
+        # Set the URI to the filename that will be used
+        image_data.uri = name + image_data.file_extension
+        uri = image_data
         buffer_view = None
     else:
         uri = None
