@@ -7,11 +7,11 @@ from io_scene_gltf2.blender.exp import joints as gltf2_blender_gather_joints
 from io_scene_gltf2.blender.exp.material import materials as gltf2_blender_gather_materials
 from io_scene_gltf2.blender.exp.material import texture_info as gltf2_blender_gather_texture_info
 from io_scene_gltf2.blender.exp.material import image as gltf2_blender_image
-from io_scene_gltf2.blender.exp.gltf2_blender_gather_cache import cached
+from io_scene_gltf2.blender.exp.cache import cached
 from io_scene_gltf2.io.com import gltf2_io_extensions
 from io_scene_gltf2.io.com import gltf2_io
-from io_scene_gltf2.io.exp import gltf2_io_binary_data
-from io_scene_gltf2.io.exp import gltf2_io_image_data
+from io_scene_gltf2.io.exp import binary_data as gltf2_io_binary_data
+from io_scene_gltf2.io.exp import image_data as gltf2_io_image_data
 from typing import Optional, Tuple, Union
 from ..nodes.lightmap import MozLightmapNode
 
