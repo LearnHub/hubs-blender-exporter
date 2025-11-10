@@ -1,6 +1,6 @@
 import os
 import bpy
-from io_scene_gltf2.blender.com import gltf2_blender_extras
+from io_scene_gltf2.blender.com import extras as gltf2_blender_extras
 # Blender 4.x imports - module structure changed
 from io_scene_gltf2.blender.exp import nodes as gltf2_blender_gather_nodes
 from io_scene_gltf2.blender.exp import joints as gltf2_blender_gather_joints
@@ -14,6 +14,30 @@ from io_scene_gltf2.io.exp import gltf2_io_binary_data
 from io_scene_gltf2.io.exp import gltf2_io_image_data
 from typing import Optional, Tuple, Union
 from ..nodes.lightmap import MozLightmapNode
+
+
+# Blender 4.x helper function - replaces gltf2_blender_extras.__to_json_compatible
+def to_json_compatible(value):
+    """Make a value (usually a custom property) compatible with json"""
+    if isinstance(value, bpy.types.ID):
+        return value
+    elif isinstance(value, str):
+        return value
+    elif isinstance(value, (int, float)):
+        return value
+    elif isinstance(value, list):
+        value = list(value)
+        for index in range(len(value)):
+            value[index] = to_json_compatible(value[index])
+        return value
+    elif hasattr(value, "to_list"):
+        return value.to_list()
+    elif hasattr(value, "to_dict"):
+        value = value.to_dict()
+        if gltf2_blender_extras.is_json_convertible(value):
+            return value
+    return None
+
 
 # gather_texture/image with HDR support via MOZ_texture_rgbe and OPEN_EXR support via MOZ_texture_exr
 
@@ -191,7 +215,7 @@ def gather_property(export_settings, blender_object, target, property_name):
         elif type(property_value) == bpy.types.Texture:
             return gather_texture_property(export_settings, blender_object, target, property_name)
 
-    return gltf2_blender_extras.__to_json_compatible(property_value)
+    return to_json_compatible(property_value)
 
 
 def gather_array_property(export_settings, blender_object, target, property_name):

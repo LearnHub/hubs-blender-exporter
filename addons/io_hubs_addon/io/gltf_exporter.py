@@ -57,7 +57,7 @@ def export_callback(callback_method, export_settings):
 
 
 def glTF2_pre_export_callback(export_settings):
-    from io_scene_gltf2.blender.com.gltf2_blender_extras import BLACK_LIST
+    from io_scene_gltf2.blender.com.extras import BLACK_LIST
     BLACK_LIST.extend(glTF2ExportUserExtension.EXCLUDED_PROPERTIES)
     export_callback("pre_export", export_settings)
 
@@ -65,7 +65,7 @@ def glTF2_pre_export_callback(export_settings):
 def glTF2_post_export_callback(export_settings):
     export_callback("post_export", export_settings)
 
-    from io_scene_gltf2.blender.com.gltf2_blender_extras import BLACK_LIST
+    from io_scene_gltf2.blender.com.extras import BLACK_LIST
     for excluded_prop in glTF2ExportUserExtension.EXCLUDED_PROPERTIES:
         if excluded_prop in BLACK_LIST:
             BLACK_LIST.remove(excluded_prop)
@@ -212,7 +212,7 @@ class HubsComponentsExtensionProperties(bpy.types.PropertyGroup):
 
 
 # Blender 4.x uses a new layout panel system instead of Panel classes
-def draw_hubs_exporter_panel(context, layout, operator):
+def draw_hubs_exporter_panel(context, layout):
     """Draw function for Hubs exporter panel in Blender 4.x+"""
     props = context.scene.HubsComponentsExtensionProperties
 
