@@ -187,10 +187,10 @@ def gather_properties(export_settings, object, component):
         value[key] = gather_property(
             export_settings, object, component, key)
 
-    if value:
-        return value
-    else:
-        return {"__empty_component_dummy": None}
+    # Always return the value dict, even if empty
+    # Note: glTF exporters may filter out completely empty {} objects
+    # If needed, components can define at least one property to ensure export
+    return value if value else {}
 
 
 def gather_property(export_settings, blender_object, target, property_name):
