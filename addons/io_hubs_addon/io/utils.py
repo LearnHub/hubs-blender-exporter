@@ -395,22 +395,25 @@ def gather_lightmap_texture_info(blender_material, export_settings):
     texture_socket = lightmap_node.inputs.get("Lightmap")
     intensity = lightmap_node.intensity
 
-    # TODO this assumes a single image directly connected to the socket
+    # Check if the socket is connected
+    if not texture_socket or not texture_socket.is_linked:
+        return None
+
+    # Get the image from the connected texture node
     blender_image = texture_socket.links[0].from_node.image
     texture = gather_texture(blender_image, export_settings)
-    # Blender 4.x uses the newer API (introduced in 3.2.0) that returns 3 values
-    tex_transform, tex_coord, _ = gltf2_blender_gather_texture_info.__gather_texture_transform_and_tex_coord(
-        texture_socket, export_settings)
+
+    if not texture:
+        return None
+
+    # Create basic texture info with default UV coordinates
+    # TODO: Support texture transforms and custom UV maps
     texture_info = gltf2_io.TextureInfo(
-        extensions=gltf2_blender_gather_texture_info.__gather_extensions(
-            tex_transform, export_settings),
+        extensions=None,
         extras=None,
         index=texture,
-        tex_coord=tex_coord
+        tex_coord=0
     )
-
-    if not texture_info:
-        return
 
     return {
         "intensity": intensity,
