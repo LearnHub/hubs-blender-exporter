@@ -1,21 +1,5 @@
 import bpy
-
-import nodeitems_utils
-from nodeitems_utils import NodeCategory, NodeItem
-from bpy.types import Node
-
-
-class MozCategory(NodeCategory):
-    @classmethod
-    def poll(cls, context):
-        return context.space_data.tree_type == 'ShaderNodeTree'
-
-
-node_categories = [
-    MozCategory("MOZ_NODES", "Hubs", items=[
-        NodeItem("moz_lightmap.node")
-    ]),
-]
+from bpy.types import Node, Menu
 
 
 class MozLightmapNode(Node):
@@ -46,11 +30,33 @@ class MozLightmapNode(Node):
         return "MOZ_lightmap"
 
 
+class NODE_MT_category_hubs(Menu):
+    bl_idname = "NODE_MT_category_hubs"
+    bl_label = "Hubs"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator("node.add_node", text="MOZ_lightmap").type = 'moz_lightmap.node'
+
+    @classmethod
+    def poll(cls, context):
+        return (hasattr(context, 'space_data') and
+                context.space_data.tree_type == 'ShaderNodeTree')
+
+
+def draw_hubs_menu(self, context):
+    layout = self.layout
+    layout.separator()
+    layout.menu("NODE_MT_category_hubs")
+
+
 def register():
     bpy.utils.register_class(MozLightmapNode)
-    nodeitems_utils.register_node_categories("MOZ_NODES", node_categories)
+    bpy.utils.register_class(NODE_MT_category_hubs)
+    bpy.types.NODE_MT_shader_node_add_all.append(draw_hubs_menu)
 
 
 def unregister():
+    bpy.types.NODE_MT_shader_node_add_all.remove(draw_hubs_menu)
+    bpy.utils.unregister_class(NODE_MT_category_hubs)
     bpy.utils.unregister_class(MozLightmapNode)
-    nodeitems_utils.unregister_node_categories("MOZ_NODES")
