@@ -6,6 +6,7 @@ from io_scene_gltf2.blender.exp import nodes as gltf2_blender_gather_nodes
 from io_scene_gltf2.blender.exp import joints as gltf2_blender_gather_joints
 from io_scene_gltf2.blender.exp.material import materials as gltf2_blender_gather_materials
 from io_scene_gltf2.blender.exp.material import texture_info as gltf2_blender_gather_texture_info
+from io_scene_gltf2.blender.exp.material import search_node_tree as gltf2_blender_search_node_tree
 from io_scene_gltf2.blender.exp.material import image as gltf2_blender_image
 from io_scene_gltf2.blender.exp.cache import cached
 from io_scene_gltf2.io.com import gltf2_io_extensions
@@ -425,14 +426,39 @@ def gather_lightmap_texture_info(blender_material, export_settings):
     if not texture:
         return None
 
-    # Create basic texture info with default UV coordinates
-    # TODO: Support texture transforms and custom UV maps
+    # Wrap the socket for Blender 4.x compatibility
+    socket = gltf2_blender_search_node_tree.NodeSocket(texture_socket, blender_material)
+
+    # Get texture transform and UV map info from the node tree
+    tex_attributes = gltf2_blender_gather_texture_info.__gather_texture_transform_and_tex_coord(
+        socket, export_settings)
+    tex_transform, uvmap_info = tex_attributes[:2]
+
+    # In Blender 4.x, uvmap_info is a dict with 'type' and 'value' (UV map name)
+    # We need to convert this to a numeric index. Lightmaps typically use UV set 1.
+    # For now, default to 1 unless we can determine otherwise from the UV map name.
+    tex_coord = 1
+    if isinstance(uvmap_info, dict) and uvmap_info.get('value'):
+        # If the UV map name contains '0' or is 'UVMap', use index 0
+        # Otherwise use index 1 for lightmaps
+        uv_name = uvmap_info.get('value', '').lower()
+        if 'uvmap' in uv_name and '1' not in uv_name:
+            tex_coord = 0
+        # else keep tex_coord = 1 for lightmap
+    elif isinstance(uvmap_info, int):
+        # Older Blender versions may return int directly
+        tex_coord = uvmap_info
+
     texture_info = gltf2_io.TextureInfo(
-        extensions=None,
+        extensions=gltf2_blender_gather_texture_info.__gather_extensions(
+            tex_transform, export_settings),
         extras=None,
         index=texture,
-        tex_coord=0
+        tex_coord=tex_coord
     )
+
+    if not texture_info:
+        return None
 
     return {
         "intensity": intensity,
