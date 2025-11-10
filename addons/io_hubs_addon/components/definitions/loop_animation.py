@@ -387,8 +387,7 @@ class TracksList(bpy.types.UIList):
                 row.menu(UpdateTrackContextMenu.bl_idname,
                          text=item.name + spacer, icon='ERROR')
             row = split.row(align=True)
-            row.emboss = 'UI_EMBOSS_NONE_OR_STATUS' if bpy.app.version < (
-                3, 0, 0) else 'NONE_OR_STATUS'
+            row.emboss = 'NONE_OR_STATUS'
         elif self.layout_type == 'GRID':
             layout.alignment = 'CENTER'
             layout.label(text="", icon_value=icon)

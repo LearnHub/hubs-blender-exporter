@@ -312,8 +312,7 @@ class RecastNavMeshResetOperator(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         if is_linked(context.scene):
-            if bpy.app.version >= (3, 0, 0):
-                cls.poll_message_set("Cannot reset navigation mesh settings when in a linked scene")
+            cls.poll_message_set("Cannot reset navigation mesh settings when in a linked scene")
             return False
 
         return True
@@ -350,8 +349,7 @@ class RecastNavMeshGenerateOperator(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         if is_linked(context.scene):
-            if bpy.app.version >= (3, 0, 0):
-                cls.poll_message_set("Cannot build a navigation mesh when in a linked scene")
+            cls.poll_message_set("Cannot build a navigation mesh when in a linked scene")
             return False
 
         return True

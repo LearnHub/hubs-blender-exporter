@@ -1,14 +1,12 @@
 import os
 import bpy
 from io_scene_gltf2.blender.com import gltf2_blender_extras
-if bpy.app.version >= (3, 6, 0):
-    from io_scene_gltf2.blender.exp import gltf2_blender_gather_nodes, gltf2_blender_gather_joints
-    from io_scene_gltf2.blender.exp.material import gltf2_blender_gather_materials, gltf2_blender_gather_texture_info
-    from io_scene_gltf2.blender.exp.material.extensions import gltf2_blender_image
-else:
-    from io_scene_gltf2.blender.exp import gltf2_blender_gather_materials, gltf2_blender_gather_nodes, gltf2_blender_gather_joints
-    from io_scene_gltf2.blender.exp import gltf2_blender_gather_texture_info, gltf2_blender_export_keys
-    from io_scene_gltf2.blender.exp import gltf2_blender_image
+# Blender 4.x imports - module structure changed
+from io_scene_gltf2.blender.exp import nodes as gltf2_blender_gather_nodes
+from io_scene_gltf2.blender.exp import joints as gltf2_blender_gather_joints
+from io_scene_gltf2.blender.exp.material import materials as gltf2_blender_gather_materials
+from io_scene_gltf2.blender.exp.material import texture_info as gltf2_blender_gather_texture_info
+from io_scene_gltf2.blender.exp.material import image as gltf2_blender_image
 from io_scene_gltf2.blender.exp.gltf2_blender_gather_cache import cached
 from io_scene_gltf2.io.com import gltf2_io_extensions
 from io_scene_gltf2.io.com import gltf2_io
@@ -43,10 +41,8 @@ class HubsExportImage(gltf2_blender_image.ExportImage):
             return self.encode_from_image_hdr(self.blender_image())
         if mime_type == "image/x-exr":
             return self.encode_from_image_exr(self.blender_image())
-        if bpy.app.version < (3, 5, 0):
-            return super().encode(mime_type)
-        else:
-            return super().encode(mime_type, export_settings)
+        # Blender 4.x uses the new API with export_settings
+        return super().encode(mime_type, export_settings)
 
     # TODO this should allow in memory images, and combining separate channels like SDR images
     def encode_from_image_hdr(self, image: bpy.types.Image) -> Union[Tuple[bytes, bool], bytes]:
@@ -214,22 +210,14 @@ def gather_node_property(export_settings, blender_object, target, property_name)
     blender_object = getattr(target, property_name)
 
     if blender_object:
-        if bpy.app.version < (3, 2, 0):
-            node = gltf2_blender_gather_nodes.gather_node(
-                blender_object,
-                blender_object.library.name if blender_object.library else None,
-                blender_object.users_scene[0],
-                None,
-                export_settings
-            )
-        else:
-            vtree = export_settings['vtree']
-            vnode = vtree.nodes[next((uuid for uuid in vtree.nodes if (
-                vtree.nodes[uuid].blender_object == blender_object)), None)]
-            node = vnode.node or gltf2_blender_gather_nodes.gather_node(
-                vnode,
-                export_settings
-            )
+        # Blender 4.x always uses vtree (introduced in 3.2.0)
+        vtree = export_settings['vtree']
+        vnode = vtree.nodes[next((uuid for uuid in vtree.nodes if (
+            vtree.nodes[uuid].blender_object == blender_object)), None)]
+        node = vnode.node or gltf2_blender_gather_nodes.gather_node(
+            vnode,
+            export_settings
+        )
 
         return {
             "__mhc_link_type": "node",
@@ -246,20 +234,14 @@ def gather_joint_property(export_settings, blender_object, target, property_name
     joint = blender_object.pose.bones[joint_name]
 
     if joint:
-        if bpy.app.version < (3, 2, 0):
-            node = gltf2_blender_gather_joints.gather_joint(
-                blender_object,
-                joint,
-                export_settings
-            )
-        else:
-            vtree = export_settings['vtree']
-            vnode = vtree.nodes[next((uuid for uuid in vtree.nodes if (
-                vtree.nodes[uuid].blender_bone == joint)), None)]
-            node = vnode.node or gltf2_blender_gather_joints.gather_joint_vnode(
-                vnode,
-                export_settings
-            )
+        # Blender 4.x always uses vtree (introduced in 3.2.0)
+        vtree = export_settings['vtree']
+        vnode = vtree.nodes[next((uuid for uuid in vtree.nodes if (
+            vtree.nodes[uuid].blender_bone == joint)), None)]
+        node = vnode.node or gltf2_blender_gather_joints.gather_joint_vnode(
+            vnode,
+            export_settings
+        )
 
         return {
             "__mhc_link_type": "node",
@@ -371,12 +353,9 @@ def gather_lightmap_texture_info(blender_material, export_settings):
     # TODO this assumes a single image directly connected to the socket
     blender_image = texture_socket.links[0].from_node.image
     texture = gather_texture(blender_image, export_settings)
-    if bpy.app.version < (3, 2, 0):
-        tex_transform, tex_coord = gltf2_blender_gather_texture_info.__gather_texture_transform_and_tex_coord(
-            texture_socket, export_settings)
-    else:
-        tex_transform, tex_coord, _ = gltf2_blender_gather_texture_info.__gather_texture_transform_and_tex_coord(
-            texture_socket, export_settings)
+    # Blender 4.x uses the newer API (introduced in 3.2.0) that returns 3 values
+    tex_transform, tex_coord, _ = gltf2_blender_gather_texture_info.__gather_texture_transform_and_tex_coord(
+        texture_socket, export_settings)
     texture_info = gltf2_io.TextureInfo(
         extensions=gltf2_blender_gather_texture_info.__gather_extensions(
             tex_transform, export_settings),

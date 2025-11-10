@@ -140,8 +140,6 @@ class BakeProbeOperator(Operator):
     def description(cls, context, properties):
         if properties.bake_mode == 'ACTIVE':
             description_text = "Generate a 360 equirectangular HDR environment map of the current area in the scene"
-            if bpy.app.version < (3, 0, 0) and is_linked(context.active_object):
-                description_text += f"\nDisabled: {cls.disabled_message}"
         elif properties.bake_mode == 'SELECTED':
             description_text = "Bake the selected unlocked/local reflection probes"
         else:
@@ -152,8 +150,7 @@ class BakeProbeOperator(Operator):
     @ classmethod
     def poll(cls, context):
         if hasattr(context, 'bake_active_probe') and is_linked(context.active_object):
-            if bpy.app.version >= (3, 0, 0):
-                cls.poll_message_set(f"{cls.disabled_message}.")
+            cls.poll_message_set(f"{cls.disabled_message}.")
             return False
 
         return not probe_baking and hasattr(bpy.context.scene, "cycles")
@@ -389,8 +386,7 @@ class OpenReflectionProbeEnvMap(OpenImage):
     @ classmethod
     def poll(cls, context):
         if is_linked(context.active_object):
-            if bpy.app.version >= (3, 0, 0):
-                cls.poll_message_set(f"{cls.disabled_message}.")
+            cls.poll_message_set(f"{cls.disabled_message}.")
             return False
 
         probe_component = context.active_object.hubs_component_reflection_probe
