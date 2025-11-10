@@ -187,10 +187,19 @@ def gather_properties(export_settings, object, component):
         value[key] = gather_property(
             export_settings, object, component, key)
 
-    # Always return the value dict, even if empty
-    # Note: glTF exporters may filter out completely empty {} objects
-    # If needed, components can define at least one property to ensure export
-    return value if value else {}
+    # For components with no properties, return a marker to ensure they appear in the export
+    # This is critical for components like nav-mesh where Hubs needs to see the component
+    # exists even though it has no configurable properties
+    if value:
+        return value
+    else:
+        # Blender 4.2+ added an extra __fix_json call that strips out empty values
+        # Use nested dummy structure so one level survives the stripping
+        import bpy
+        if bpy.app.version >= (4, 2, 0):
+            return {"__empty_component_dummy": {"__empty_component_dummy": None}}
+        else:
+            return {"__empty_component_dummy": None}
 
 
 def gather_property(export_settings, blender_object, target, property_name):
