@@ -30,23 +30,19 @@ class AddHubsComponent(Operator):
             panel_type = PanelType(panel.bl_context)
             if panel_type == PanelType.SCENE:
                 if is_linked(context.scene):
-                    if bpy.app.version >= (3, 0, 0):
-                        cls.poll_message_set("Cannot add components to linked scenes")
+                    cls.poll_message_set("Cannot add components to linked scenes")
                     return False
             elif panel_type == PanelType.OBJECT:
                 if is_linked(context.active_object):
-                    if bpy.app.version >= (3, 0, 0):
-                        cls.poll_message_set("Cannot add components to linked objects")
+                    cls.poll_message_set("Cannot add components to linked objects")
                     return False
             elif panel_type == PanelType.MATERIAL:
                 if is_linked(context.active_object.active_material):
-                    if bpy.app.version >= (3, 0, 0):
-                        cls.poll_message_set("Cannot add components to linked materials")
+                    cls.poll_message_set("Cannot add components to linked materials")
                     return False
             elif panel_type == PanelType.BONE:
                 if is_linked(context.active_bone):
-                    if bpy.app.version >= (3, 0, 0):
-                        cls.poll_message_set("Cannot add components to linked bones")
+                    cls.poll_message_set("Cannot add components to linked bones")
                     return False
 
         return True
@@ -214,23 +210,19 @@ class RemoveHubsComponent(Operator):
             panel_type = PanelType(panel.bl_context)
             if panel_type == PanelType.SCENE:
                 if is_linked(context.scene):
-                    if bpy.app.version >= (3, 0, 0):
-                        cls.poll_message_set("Cannot remove components from linked scenes")
+                    cls.poll_message_set("Cannot remove components from linked scenes")
                     return False
             elif panel_type == PanelType.OBJECT:
                 if is_linked(context.active_object):
-                    if bpy.app.version >= (3, 0, 0):
-                        cls.poll_message_set("Cannot remove components from linked objects")
+                    cls.poll_message_set("Cannot remove components from linked objects")
                     return False
             elif panel_type == PanelType.MATERIAL:
                 if is_linked(context.active_object.active_material):
-                    if bpy.app.version >= (3, 0, 0):
-                        cls.poll_message_set("Cannot remove components from linked materials")
+                    cls.poll_message_set("Cannot remove components from linked materials")
                     return False
             elif panel_type == PanelType.BONE:
                 if is_linked(context.active_bone):
-                    if bpy.app.version >= (3, 0, 0):
-                        cls.poll_message_set("Cannot add components to linked bones")
+                    cls.poll_message_set("Cannot add components to linked bones")
                     return False
 
         return True

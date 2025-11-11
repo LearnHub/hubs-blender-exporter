@@ -4,9 +4,9 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-fake-bpy-module-2-82 = "*"
+fake-bpy-module-4-5 = "*"
 
 [packages]
 
 [requires]
-python_version = "3.8"
+python_version = "3.11"

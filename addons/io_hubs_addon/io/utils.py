@@ -1,21 +1,44 @@
 import os
 import bpy
-from io_scene_gltf2.blender.com import gltf2_blender_extras
-if bpy.app.version >= (3, 6, 0):
-    from io_scene_gltf2.blender.exp import gltf2_blender_gather_nodes, gltf2_blender_gather_joints
-    from io_scene_gltf2.blender.exp.material import gltf2_blender_gather_materials, gltf2_blender_gather_texture_info
-    from io_scene_gltf2.blender.exp.material.extensions import gltf2_blender_image
-else:
-    from io_scene_gltf2.blender.exp import gltf2_blender_gather_materials, gltf2_blender_gather_nodes, gltf2_blender_gather_joints
-    from io_scene_gltf2.blender.exp import gltf2_blender_gather_texture_info, gltf2_blender_export_keys
-    from io_scene_gltf2.blender.exp import gltf2_blender_image
-from io_scene_gltf2.blender.exp.gltf2_blender_gather_cache import cached
+from io_scene_gltf2.blender.com import extras as gltf2_blender_extras
+# Blender 4.x imports - module structure changed
+from io_scene_gltf2.blender.exp import nodes as gltf2_blender_gather_nodes
+from io_scene_gltf2.blender.exp import joints as gltf2_blender_gather_joints
+from io_scene_gltf2.blender.exp.material import materials as gltf2_blender_gather_materials
+from io_scene_gltf2.blender.exp.material import texture_info as gltf2_blender_gather_texture_info
+from io_scene_gltf2.blender.exp.material import search_node_tree as gltf2_blender_search_node_tree
+from io_scene_gltf2.blender.exp.material import image as gltf2_blender_image
+from io_scene_gltf2.blender.exp.cache import cached
 from io_scene_gltf2.io.com import gltf2_io_extensions
 from io_scene_gltf2.io.com import gltf2_io
-from io_scene_gltf2.io.exp import gltf2_io_binary_data
-from io_scene_gltf2.io.exp import gltf2_io_image_data
+from io_scene_gltf2.io.exp import binary_data as gltf2_io_binary_data
+from io_scene_gltf2.io.exp import image_data as gltf2_io_image_data
 from typing import Optional, Tuple, Union
 from ..nodes.lightmap import MozLightmapNode
+
+
+# Blender 4.x helper function - replaces gltf2_blender_extras.__to_json_compatible
+def to_json_compatible(value):
+    """Make a value (usually a custom property) compatible with json"""
+    if isinstance(value, bpy.types.ID):
+        return value
+    elif isinstance(value, str):
+        return value
+    elif isinstance(value, (int, float)):
+        return value
+    elif isinstance(value, list):
+        value = list(value)
+        for index in range(len(value)):
+            value[index] = to_json_compatible(value[index])
+        return value
+    elif hasattr(value, "to_list"):
+        return value.to_list()
+    elif hasattr(value, "to_dict"):
+        value = value.to_dict()
+        if gltf2_blender_extras.is_json_convertible(value):
+            return value
+    return None
+
 
 # gather_texture/image with HDR support via MOZ_texture_rgbe and OPEN_EXR support via MOZ_texture_exr
 
@@ -31,22 +54,34 @@ class HubsImageData(gltf2_io_image_data.ImageData):
 
 
 class HubsExportImage(gltf2_blender_image.ExportImage):
+    def __init__(self):
+        super().__init__()
+        self._hubs_original_image = None
+
     @staticmethod
     def from_blender_image(image: bpy.types.Image):
         export_image = HubsExportImage()
+        export_image._hubs_original_image = image
         for chan in range(image.channels):
             export_image.fill_image(image, dst_chan=chan, src_chan=chan)
         return export_image
 
     def encode(self, mime_type: Optional[str], export_settings) -> Union[Tuple[bytes, bool], bytes]:
+        blender_img = self.blender_image(export_settings)
+
+        # If blender_image() returns None (not on happy path), use our stored original
+        if not blender_img and self._hubs_original_image:
+            blender_img = self._hubs_original_image
+
         if mime_type == "image/vnd.radiance":
-            return self.encode_from_image_hdr(self.blender_image())
-        if mime_type == "image/x-exr":
-            return self.encode_from_image_exr(self.blender_image())
-        if bpy.app.version < (3, 5, 0):
-            return super().encode(mime_type)
-        else:
-            return super().encode(mime_type, export_settings)
+            if blender_img:
+                return self.encode_from_image_hdr(blender_img)
+        elif mime_type == "image/x-exr":
+            if blender_img:
+                return self.encode_from_image_exr(blender_img)
+
+        # Blender 4.x uses the new API with export_settings
+        return super().encode(mime_type, export_settings)
 
     # TODO this should allow in memory images, and combining separate channels like SDR images
     def encode_from_image_hdr(self, image: bpy.types.Image) -> Union[Tuple[bytes, bool], bytes]:
@@ -81,10 +116,18 @@ def gather_image(blender_image, export_settings):
     if not blender_image:
         return None
 
-    name, _extension = os.path.splitext(
-        os.path.basename(blender_image.filepath))
+    # For images with a filepath, use the basename
+    # For generated/baked images without filepath, use the image name
+    if blender_image.filepath:
+        name, _extension = os.path.splitext(
+            os.path.basename(blender_image.filepath))
+    else:
+        # Use the image name for generated images (e.g., baked lightmaps)
+        name = blender_image.name
 
-    if export_settings["gltf_image_format"] == "AUTO":
+    # Get image format with default fallback for compatibility
+    image_format = export_settings.get("gltf_image_format", "AUTO")
+    if image_format == "AUTO":
         if blender_image.file_format == "HDR":
             mime_type = "image/vnd.radiance"
         elif blender_image.file_format == "OPEN_EXR":
@@ -99,8 +142,17 @@ def gather_image(blender_image, export_settings):
     if type(data) == tuple:
         data = data[0]
 
-    if export_settings['gltf_format'] == 'GLTF_SEPARATE':
-        uri = HubsImageData(data=data, mime_type=mime_type, name=name)
+    # If encoding failed or returned empty data, return None
+    if data is None or (isinstance(data, bytes) and len(data) == 0):
+        return None
+
+    # Get format with default fallback for compatibility
+    gltf_format = export_settings.get('gltf_format', 'GLTF_SEPARATE')
+    if gltf_format == 'GLTF_SEPARATE':
+        image_data = HubsImageData(data=data, mime_type=mime_type, name=name)
+        # Set the URI to the filename that will be used
+        image_data.uri = name + image_data.file_extension
+        uri = image_data
         buffer_view = None
     else:
         uri = None
@@ -167,10 +219,19 @@ def gather_properties(export_settings, object, component):
         value[key] = gather_property(
             export_settings, object, component, key)
 
+    # For components with no properties, return a marker to ensure they appear in the export
+    # This is critical for components like nav-mesh where Hubs needs to see the component
+    # exists even though it has no configurable properties
     if value:
         return value
     else:
-        return {"__empty_component_dummy": None}
+        # Blender 4.2+ added an extra __fix_json call that strips out empty values
+        # Use nested dummy structure so one level survives the stripping
+        import bpy
+        if bpy.app.version >= (4, 2, 0):
+            return {"__empty_component_dummy": {"__empty_component_dummy": None}}
+        else:
+            return {"__empty_component_dummy": None}
 
 
 def gather_property(export_settings, blender_object, target, property_name):
@@ -195,7 +256,7 @@ def gather_property(export_settings, blender_object, target, property_name):
         elif type(property_value) == bpy.types.Texture:
             return gather_texture_property(export_settings, blender_object, target, property_name)
 
-    return gltf2_blender_extras.__to_json_compatible(property_value)
+    return to_json_compatible(property_value)
 
 
 def gather_array_property(export_settings, blender_object, target, property_name):
@@ -214,22 +275,14 @@ def gather_node_property(export_settings, blender_object, target, property_name)
     blender_object = getattr(target, property_name)
 
     if blender_object:
-        if bpy.app.version < (3, 2, 0):
-            node = gltf2_blender_gather_nodes.gather_node(
-                blender_object,
-                blender_object.library.name if blender_object.library else None,
-                blender_object.users_scene[0],
-                None,
-                export_settings
-            )
-        else:
-            vtree = export_settings['vtree']
-            vnode = vtree.nodes[next((uuid for uuid in vtree.nodes if (
-                vtree.nodes[uuid].blender_object == blender_object)), None)]
-            node = vnode.node or gltf2_blender_gather_nodes.gather_node(
-                vnode,
-                export_settings
-            )
+        # Blender 4.x always uses vtree (introduced in 3.2.0)
+        vtree = export_settings['vtree']
+        vnode = vtree.nodes[next((uuid for uuid in vtree.nodes if (
+            vtree.nodes[uuid].blender_object == blender_object)), None)]
+        node = vnode.node or gltf2_blender_gather_nodes.gather_node(
+            vnode,
+            export_settings
+        )
 
         return {
             "__mhc_link_type": "node",
@@ -246,20 +299,14 @@ def gather_joint_property(export_settings, blender_object, target, property_name
     joint = blender_object.pose.bones[joint_name]
 
     if joint:
-        if bpy.app.version < (3, 2, 0):
-            node = gltf2_blender_gather_joints.gather_joint(
-                blender_object,
-                joint,
-                export_settings
-            )
-        else:
-            vtree = export_settings['vtree']
-            vnode = vtree.nodes[next((uuid for uuid in vtree.nodes if (
-                vtree.nodes[uuid].blender_bone == joint)), None)]
-            node = vnode.node or gltf2_blender_gather_joints.gather_joint_vnode(
-                vnode,
-                export_settings
-            )
+        # Blender 4.x always uses vtree (introduced in 3.2.0)
+        vtree = export_settings['vtree']
+        vnode = vtree.nodes[next((uuid for uuid in vtree.nodes if (
+            vtree.nodes[uuid].blender_bone == joint)), None)]
+        node = vnode.node or gltf2_blender_gather_joints.gather_joint_vnode(
+            vnode,
+            export_settings
+        )
 
         return {
             "__mhc_link_type": "node",
@@ -368,15 +415,40 @@ def gather_lightmap_texture_info(blender_material, export_settings):
     texture_socket = lightmap_node.inputs.get("Lightmap")
     intensity = lightmap_node.intensity
 
-    # TODO this assumes a single image directly connected to the socket
+    # Check if the socket is connected
+    if not texture_socket or not texture_socket.is_linked:
+        return None
+
+    # Get the image from the connected texture node
     blender_image = texture_socket.links[0].from_node.image
     texture = gather_texture(blender_image, export_settings)
-    if bpy.app.version < (3, 2, 0):
-        tex_transform, tex_coord = gltf2_blender_gather_texture_info.__gather_texture_transform_and_tex_coord(
-            texture_socket, export_settings)
-    else:
-        tex_transform, tex_coord, _ = gltf2_blender_gather_texture_info.__gather_texture_transform_and_tex_coord(
-            texture_socket, export_settings)
+
+    if not texture:
+        return None
+
+    # Wrap the socket for Blender 4.x compatibility
+    socket = gltf2_blender_search_node_tree.NodeSocket(texture_socket, blender_material)
+
+    # Get texture transform and UV map info from the node tree
+    tex_attributes = gltf2_blender_gather_texture_info.__gather_texture_transform_and_tex_coord(
+        socket, export_settings)
+    tex_transform, uvmap_info = tex_attributes[:2]
+
+    # In Blender 4.x, uvmap_info is a dict with 'type' and 'value' (UV map name)
+    # We need to convert this to a numeric index. Lightmaps typically use UV set 1.
+    # For now, default to 1 unless we can determine otherwise from the UV map name.
+    tex_coord = 1
+    if isinstance(uvmap_info, dict) and uvmap_info.get('value'):
+        # If the UV map name contains '0' or is 'UVMap', use index 0
+        # Otherwise use index 1 for lightmaps
+        uv_name = uvmap_info.get('value', '').lower()
+        if 'uvmap' in uv_name and '1' not in uv_name:
+            tex_coord = 0
+        # else keep tex_coord = 1 for lightmap
+    elif isinstance(uvmap_info, int):
+        # Older Blender versions may return int directly
+        tex_coord = uvmap_info
+
     texture_info = gltf2_io.TextureInfo(
         extensions=gltf2_blender_gather_texture_info.__gather_extensions(
             tex_transform, export_settings),
@@ -386,7 +458,7 @@ def gather_lightmap_texture_info(blender_material, export_settings):
     )
 
     if not texture_info:
-        return
+        return None
 
     return {
         "intensity": intensity,

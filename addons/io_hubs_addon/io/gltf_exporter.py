@@ -9,21 +9,6 @@ hubs_config = {
     "gltfExtensionVersion": 4,
 }
 
-if bpy.app.version < (3, 0, 0):
-    from io_scene_gltf2.io.exp.gltf2_io_user_extensions import export_user_extensions
-    from io_scene_gltf2.blender.exp import gltf2_blender_export
-
-    # gather_gltf_hook does not expose the info we need, make a custom hook for now
-    # ideally we can resolve this upstream somehow https://github.com/KhronosGroup/glTF-Blender-IO/issues/1009
-    orig_gather_gltf = gltf2_blender_export.__gather_gltf
-
-
-def patched_gather_gltf(exporter, export_settings):
-    orig_gather_gltf(exporter, export_settings)
-    export_user_extensions('hubs_gather_gltf_hook',
-                           export_settings, exporter._GlTF2Exporter__gltf)
-    exporter._GlTF2Exporter__traverse(exporter._GlTF2Exporter__gltf.extensions)
-
 
 def get_version_string():
     from .. import (bl_info)
@@ -72,7 +57,7 @@ def export_callback(callback_method, export_settings):
 
 
 def glTF2_pre_export_callback(export_settings):
-    from io_scene_gltf2.blender.com.gltf2_blender_extras import BLACK_LIST
+    from io_scene_gltf2.blender.com.extras import BLACK_LIST
     BLACK_LIST.extend(glTF2ExportUserExtension.EXCLUDED_PROPERTIES)
     export_callback("pre_export", export_settings)
 
@@ -80,7 +65,7 @@ def glTF2_pre_export_callback(export_settings):
 def glTF2_post_export_callback(export_settings):
     export_callback("post_export", export_settings)
 
-    from io_scene_gltf2.blender.com.gltf2_blender_extras import BLACK_LIST
+    from io_scene_gltf2.blender.com.extras import BLACK_LIST
     for excluded_prop in glTF2ExportUserExtension.EXCLUDED_PROPERTIES:
         if excluded_prop in BLACK_LIST:
             BLACK_LIST.remove(excluded_prop)
@@ -226,61 +211,98 @@ class HubsComponentsExtensionProperties(bpy.types.PropertyGroup):
     )
 
 
-class HubsGLTFExportPanel(bpy.types.Panel):
+# Blender 4.x uses a new layout panel system instead of Panel classes
+def draw_hubs_exporter_panel(context, layout):
+    """Draw function for Hubs exporter panel in Blender 4.x+"""
+    props = context.scene.HubsComponentsExtensionProperties
 
-    bl_idname = "HBA_PT_Export_Panel"
-    bl_label = "Hubs Export Panel"
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'TOOL_PROPS'
-    bl_label = "Hubs Components"
-    bl_parent_id = "GLTF_PT_export_user_extensions"
-    bl_options = {'DEFAULT_CLOSED'}
+    # Use the new layout.panel() method for Blender 4.x
+    header, body = layout.panel("hubs_components", default_closed=False)
+    header.use_property_split = False
+    header.prop(props, 'enabled', text="Hubs Components")
 
-    @classmethod
-    def poll(cls, context):
-        sfile = context.space_data
-        operator = sfile.active_operator
-        return operator.bl_idname == "EXPORT_SCENE_OT_gltf"
-
-    def draw_header(self, context):
-        props = bpy.context.scene.HubsComponentsExtensionProperties
-        self.layout.prop(props, 'enabled', text="")
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False  # No animation.
-
-        props = bpy.context.scene.HubsComponentsExtensionProperties
-        layout.active = props.enabled
-
-        box = layout.box()
+    if body:
+        body.use_property_split = True
+        body.use_property_decorate = False
+        body.active = props.enabled
+        box = body.box()
         box.label(text="No options yet")
 
+
 # called by gltf-blender-io after it has loaded
-
-
 def register_export_panel():
-    try:
-        bpy.utils.register_class(HubsGLTFExportPanel)
-    except Exception:
-        pass
+    """Register the export panel using the appropriate method for the Blender version"""
+    if bpy.app.version >= (4, 0, 0):
+        # Blender 4.x: Use the new layout panel system
+        try:
+            import io_scene_gltf2
+            io_scene_gltf2.exporter_extension_layout_draw['Hubs Components'] = draw_hubs_exporter_panel
+        except Exception as e:
+            print(f"Warning: Could not register Hubs export panel for Blender 4.x: {e}")
+    else:
+        # Blender 3.x: Use the old Panel class system
+        class HubsGLTFExportPanel(bpy.types.Panel):
+            bl_idname = "HBA_PT_Export_Panel"
+            bl_label = "Hubs Export Panel"
+            bl_space_type = 'FILE_BROWSER'
+            bl_region_type = 'TOOL_PROPS'
+            bl_label = "Hubs Components"
+            bl_parent_id = "GLTF_PT_export_user_extensions"
+            bl_options = {'DEFAULT_CLOSED'}
+
+            @classmethod
+            def poll(cls, context):
+                sfile = context.space_data
+                operator = sfile.active_operator
+                return operator.bl_idname == "EXPORT_SCENE_OT_gltf"
+
+            def draw_header(self, context):
+                props = bpy.context.scene.HubsComponentsExtensionProperties
+                self.layout.prop(props, 'enabled', text="")
+
+            def draw(self, context):
+                layout = self.layout
+                layout.use_property_split = True
+                layout.use_property_decorate = False  # No animation.
+
+                props = bpy.context.scene.HubsComponentsExtensionProperties
+                layout.active = props.enabled
+
+                box = layout.box()
+                box.label(text="No options yet")
+
+        try:
+            bpy.utils.register_class(HubsGLTFExportPanel)
+        except Exception:
+            pass
+
     return unregister_export_panel
 
 
 def unregister_export_panel():
-    # Since panel is registered on demand, it is possible it is not registered
-    try:
-        bpy.utils.unregister_class(HubsGLTFExportPanel)
-    except Exception:
-        pass
+    """Unregister the export panel using the appropriate method for the Blender version"""
+    if bpy.app.version >= (4, 0, 0):
+        # Blender 4.x: Remove from the layout draw dictionary
+        try:
+            import io_scene_gltf2
+            if 'Hubs Components' in io_scene_gltf2.exporter_extension_layout_draw:
+                io_scene_gltf2.exporter_extension_layout_draw.pop('Hubs Components')
+        except Exception as e:
+            print(f"Warning: Could not unregister Hubs export panel for Blender 4.x: {e}")
+    else:
+        # Blender 3.x: Unregister the Panel class
+        try:
+            # Need to get the class from the registry since it was defined in register_export_panel
+            panel_class = getattr(bpy.types, "HBA_PT_Export_Panel", None)
+            if panel_class:
+                bpy.utils.unregister_class(panel_class)
+        except Exception:
+            pass
 
 
 def register():
     print("Register GLTF Exporter")
     register_export_panel()
-    if bpy.app.version < (3, 0, 0):
-        gltf2_blender_export.__gather_gltf = patched_gather_gltf
     bpy.utils.register_class(HubsComponentsExtensionProperties)
     bpy.types.Scene.HubsComponentsExtensionProperties = PointerProperty(
         type=HubsComponentsExtensionProperties)
@@ -292,7 +314,4 @@ def unregister():
     unregister_export_panel()
     del bpy.types.Scene.HubsComponentsExtensionProperties
     bpy.utils.unregister_class(HubsComponentsExtensionProperties)
-    if bpy.app.version < (3, 0, 0):
-        gltf2_blender_export.__gather_gltf = orig_gather_gltf
-    unregister_export_panel()
     glTF2ExportUserExtension.remove_excluded_property("HubsComponentsExtensionProperties")

@@ -98,19 +98,9 @@ def get_object_source(context, panel_type):
         return context.object
 
 
-def children_recurse(ob, result):
-    for child in ob.children:
-        result.append(child)
-        children_recurse(child, result)
-
-
 def children_recursive(ob):
-    if bpy.app.version < (3, 1, 0):
-        ret = []
-        children_recurse(ob, ret)
-        return ret
-    else:
-        return ob.children_recursive
+    # Blender 4.x (and 3.1+) has built-in children_recursive property
+    return ob.children_recursive
 
 
 def is_gpu_available(context):
