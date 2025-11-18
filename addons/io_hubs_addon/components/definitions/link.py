@@ -41,17 +41,20 @@ class Link(HubsComponent):
 
     @classmethod
     def create_gizmo(cls, ob, gizmo_group):
+        # Create main gizmo with link icon and less opaque cube sides
         gizmo = gizmo_group.gizmos.new(CustomModelGizmo.bl_idname)
         gizmo.object = ob
-        setattr(gizmo, "hubs_gizmo_shape", link.SHAPE)
+        # Link icon + front, back, left faces of cube (lower opacity)
+        main_shape = link.LINK_ICON_SHAPE + link.FACE_MINUS_X + link.FACE_PLUS_X + link.FACE_PLUS_Y + link.FACE_MINUS_Y
+        setattr(gizmo, "hubs_gizmo_shape", main_shape)
         gizmo.setup()
         gizmo.use_draw_scale = False
         gizmo.use_draw_modal = False
         gizmo.color = (0.8, 0.8, 0.8)
-        gizmo.alpha = 0.5
+        gizmo.alpha = 0.25
         gizmo.scale_basis = 1.0
         gizmo.hide_select = True
         gizmo.color_highlight = (0.8, 0.8, 0.8)
-        gizmo.alpha_highlight = 1.0
+        gizmo.alpha_highlight = 0.6
 
         return gizmo
